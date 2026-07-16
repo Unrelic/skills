@@ -19,7 +19,7 @@ a skill we haven't tested against real prompts. See each skill's `evals/evals.js
 
 ## Install
 
-**Via [`skills`](https://github.com/anthropics/skills) (works with any agent that reads `SKILL.md` files):**
+**Via the [`skills` CLI](https://github.com/vercel-labs/skills) (works with any agent that reads `SKILL.md` files):**
 
 ```bash
 npx skills add Unrelic/skills
@@ -51,4 +51,4 @@ like code because it runs like code.
 
 ## License
 
-[MIT](LICENSE) — copyright 2026 Unrelic LLC.
+[MIT](LICENSE) — copyright 2026 Unrelic.
