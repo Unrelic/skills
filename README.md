@@ -51,4 +51,4 @@ like code because it runs like code.
 
 ## License
 
-[MIT](LICENSE) — copyright 2026 Unrelic.
+[MIT](LICENSE) — copyright 2026 Unrelic LLC.
