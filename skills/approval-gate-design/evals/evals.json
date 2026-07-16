@@ -1,0 +1,64 @@
+{
+  "skill_name": "approval-gate-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the approval-gate-design skill to help me figure out where to put a human approval step in my deploy pipeline before code ships to production.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Applies the three-clause reversibility test (unilateral undo, nothing crossed the boundary, no external commitment) to the deploy step",
+        "Identifies that a production deploy fails the 'nothing crossed the boundary' clause the instant it's live, so it needs a gate rather than a post-hoc report",
+        "Proposes a concrete digest-gated ack card (what/link/gate-owner/digest/undo-line), not just 'add a confirmation'"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I'm designing an approval gate for an agent that files support tickets on a customer's behalf. Walk me through your reversibility test and how to bind an approval to a digest so a stale approval can't slip through.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Explains all three clauses of the reversibility test, not just one",
+        "Explains digest binding: the ack is tied to a sha256 of the exact content, content change voids the ack, mismatched ack gets journaled rather than silently accepted",
+        "Distinguishes reversible sub-steps (e.g. drafting the ticket) from the irreversible one (the ticket reaching the customer) rather than gating the whole workflow"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I'm building an agent that automatically emails customers when a refund is issued. I want it to run mostly unattended, but I'm nervous about it sending a refund email to the wrong person with nobody checking. How do I structure this so it's safe to leave running overnight?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Recognizes this as an implicit request for approval-gate design even though the user never says 'approval gate'",
+        "Identifies the email send (external commitment, message reaches a human) as the irreversible step that needs the gate, not the whole pipeline",
+        "Recommends the reversible parts (drafting, computing the refund amount) can run and report without asking, per the 'act, don't ask' side of tiering",
+        "Does not recommend gating every step of the pipeline (avoids the gate-by-vibes / gate-everything anti-pattern)"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "My script deletes stale rows from a shared database table on a schedule with nobody watching it. Someone asked me to make it 'safer' before we turn it back on. What should I change?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Applies the reversibility test to the delete (does undo require someone else's cooperation, e.g. a restore from backup another party would need to run)",
+        "Recommends a fail-closed default for the unknown/ambiguous case rather than 'probably fine to proceed'",
+        "Recommends gating only the irreversible portion (the actual delete) rather than the whole scheduled job"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Can you review this pull request for correctness bugs and suggest simplifications? Nothing here touches deploys or external systems, it's just a refactor of a parsing function.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Performs an ordinary code review focused on correctness and simplification",
+        "Does not introduce the reversibility test, approval gates, or digest-gated acks — this is a near-miss (code review sounds adjacent to 'review gate') but the task has no human-approval-flow design in it"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Help me center this div and fix the hover color on my submit button in CSS.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Gives a direct CSS fix",
+        "Does not mention approval gates, sign-off, or reversibility even though the element is literally named 'submit button' — the word 'submit' is a coincidence, not a workflow-gating question"
+      ]
+    }
+  ]
+}
