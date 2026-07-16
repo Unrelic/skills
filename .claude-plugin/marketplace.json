@@ -1,0 +1,29 @@
+{
+  "name": "unrelic-skills",
+  "owner": {
+    "name": "Unrelic"
+  },
+  "plugins": [
+    {
+      "name": "unrelic-skills",
+      "source": "./",
+      "description": "Agent Skills from Unrelic — patterns for designing automation where the AI conducts and a human gates the irreversible steps.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Unrelic"
+      },
+      "repository": "https://github.com/Unrelic/skills",
+      "license": "MIT",
+      "keywords": [
+        "approval-gate",
+        "human-in-the-loop",
+        "automation-safety",
+        "agent-skills",
+        "reversibility"
+      ],
+      "skills": [
+        "./skills/approval-gate-design"
+      ]
+    }
+  ]
+}
