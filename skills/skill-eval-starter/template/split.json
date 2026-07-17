@@ -1,0 +1,9 @@
+{
+  "epoch": 0,
+  "held_out": [
+    "example-script-check"
+  ],
+  "train": [
+    "example-case"
+  ]
+}

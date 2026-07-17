@@ -42,6 +42,10 @@ in this repo and install the skills it lists.
 | Skill | What it teaches |
 |---|---|
 | [`approval-gate-design`](skills/approval-gate-design/SKILL.md) | How to design a human-approval gate into an agentic workflow: the reversibility test, digest-gated acks, tiering, and the anti-patterns that turn a gate into theater. |
+| [`webhook-fast-ack`](skills/webhook-fast-ack/SKILL.md) | Why webhook receivers must ack fast and process async: the provider's delivery deadline, idempotent handlers keyed on delivery id, and recovery via the provider's own redelivery API instead of a bespoke retry sender. |
+| [`sql-door-functions`](skills/sql-door-functions/SKILL.md) | Routing every Postgres/Supabase write through one `SECURITY DEFINER` "door" function: revoke `PUBLIC` first, give writer roles zero table privileges, validate invariants in the door, and keep ledgers append-only. |
+| [`agent-audit-trail`](skills/agent-audit-trail/SKILL.md) | Making a delegated agent's "it passed" checkable: an append-only journal from a closed vocabulary, corrections as new records never edits, a prediction bound at dispatch and graded at outcome, and a deterministic tripwire on counts (never on the agent's own wording). |
+| [`skill-eval-starter`](skills/skill-eval-starter/SKILL.md) | Shipping every skill with a hermetic eval battery — fixtures with expected properties, deterministic scorers, a committed baseline, a train/holdout split, and a `run.sh` that fails the build on regression. Includes a copy-to-start `template/`. |
 
 ## Contributing
 

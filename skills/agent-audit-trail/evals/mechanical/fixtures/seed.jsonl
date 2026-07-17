@@ -1,0 +1,2 @@
+{"ts":"2026-07-15T09:00:00Z","class":"standard","model":"model-a","effort":"medium","label":"refactor-parser-142","outcome":"pass","tool_uses":6,"duration_s":94}
+{"ts":"2026-07-15T09:12:00Z","class":"research","model":"model-a","effort":"medium","label":"vendor-pricing-survey","outcome":"fail","tool_uses":2,"duration_s":31}

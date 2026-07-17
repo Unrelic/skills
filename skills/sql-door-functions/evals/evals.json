@@ -1,0 +1,80 @@
+{
+  "skill_name": "sql-door-functions",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the sql-door-functions skill to design the write path for an `orders` table in schema `acme` that a webhook handler needs to insert into. Give me the migration.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Produces a SECURITY DEFINER door function (e.g. acme.create_order) instead of granting INSERT on acme.orders to any role",
+        "Includes an explicit `revoke execute on function ... from public` before any grant",
+        "Grants EXECUTE on the door to a narrow, purpose-specific role rather than to `authenticated` or `service_role` wholesale",
+        "Does not grant INSERT, UPDATE, or DELETE on acme.orders to anon, authenticated, or service_role anywhere in the migration"
+      ],
+      "mechanical_checks": [
+        "The produced migration text matches /revoke\\s+execute\\s+on\\s+function\\s+[^;]+\\s+from\\s+public/i",
+        "The produced migration text does NOT match /grant\\s+(insert|update|delete|all)\\s+on\\s+(\\w+\\.)?orders\\s+to\\s+(anon|authenticated|service_role)/i",
+        "Apply the migration to a fixture Postgres database (with anon/authenticated/service_role roles created) and run: `select has_table_privilege('service_role', 'acme.orders', 'INSERT');` — must return false. Then run `select has_function_privilege('<the granted writer role>', 'acme.create_order(uuid,integer)', 'EXECUTE');` — must return true for the narrow role the migration granted, and false for anon/authenticated/service_role unless the prompt specifically asked for one of those to be the writer."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Here's a function I wrote for our billing schema — did I lock it down right?\n\n```sql\ncreate function billing.record_charge(p_account_id uuid, p_amount_cents integer)\nreturns uuid\nlanguage plpgsql\nsecurity definer\nas $$\ndeclare v_id uuid;\nbegin\n  insert into billing.charges (account_id, amount_cents) values (p_account_id, p_amount_cents)\n    returning id into v_id;\n  return v_id;\nend;\n$$;\n\ngrant execute on function billing.record_charge(uuid, integer) to authenticated;\n```",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Flags that there is no `revoke execute ... from public` anywhere, so PUBLIC still holds EXECUTE from the Postgres default even though the function was subsequently granted to `authenticated`",
+        "Flags the missing `set search_path` on the SECURITY DEFINER function as a search-path-hijack risk",
+        "Flags that granting EXECUTE to `authenticated` means every logged-in user can record an arbitrary charge against any account_id, with no ownership/identity check in the body (no auth.uid() or membership check)",
+        "Proposes a corrected version that revokes from public, pins search_path, and either narrows the grant or adds an explicit identity check"
+      ],
+      "mechanical_checks": [
+        "Given the pasted function definition as-is, `select has_function_privilege('public', 'billing.record_charge(uuid,integer)', 'EXECUTE');` on a fixture DB returns true — confirming the flagged gap is real, not a false positive",
+        "The agent's corrected migration text matches /revoke\\s+execute\\s+on\\s+function\\s+billing\\.record_charge[^;]+\\s+from\\s+public/i",
+        "The agent's corrected function definition matches /set\\s+search_path\\s*=/i"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I have a `ledger_entries` table for immutable audit logs — once a row is inserted it should never be editable by anyone, even our own backend using its service role. How do I enforce that at the database level instead of just relying on nobody writing UPDATE code for it?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Recognizes this as an implicit door/append-only design question even though the user never says 'door function' or 'SECURITY DEFINER'",
+        "Recommends a BEFORE UPDATE OR DELETE trigger that unconditionally raises, rather than relying only on absent grants",
+        "Explicitly notes the trigger must fire for every role including the table owner and any role with BYPASSRLS — 'no one has the grant' is not the same guarantee",
+        "Recommends corrections be modeled as new rows rather than edits to the original"
+      ],
+      "mechanical_checks": [
+        "The produced trigger definition matches /before\\s+update\\s+or\\s+delete\\s+on\\s+\\S*ledger_entries/i with no `when (...)` clause that conditions the block on role or column value (an unconditioned trigger, matching /for\\s+each\\s+row\\s+execute\\s+function/i immediately following, with no WHEN clause in between)",
+        "Apply the produced migration to a fixture DB, insert a row as service_role (a role with BYPASSRLS), then attempt `update ledger_entries set ... where id = ...` as service_role — the statement must raise an exception, not succeed"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our Next.js app currently uses the Supabase service role key directly in an API route to write to our `orders` table because RLS kept getting in the way during development. We're about to ship this. Is that okay for a v1?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Refuses to treat a service-role key reaching application code (even server-side API-route code, not just the browser) as an acceptable shortcut for a shipped product, and explains why: it bypasses RLS entirely and grants standing table privileges rather than a narrow, auditable write path",
+        "Recommends replacing the direct table write with a SECURITY DEFINER door function that the API route calls, holding EXECUTE on the door rather than raw table grants",
+        "Does not simply say 'that's fine for v1, fix it later' — treats the credential-scope issue as the thing to fix before shipping, not an acceptable technical debt item"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Write a SQL query that joins our orders and customers tables and computes total revenue by month for a dashboard.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Writes a straightforward read-only aggregate query (join + group by + sum)",
+        "Does not introduce SECURITY DEFINER functions, grant/revoke statements, or door-function design — this is a near-miss (it touches the same tables a door-functions conversation might) but the task is a read query with no write-path or privilege question in it"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "How do I set up row-level security so that a user can only see rows in the `profiles` table that belong to them? Just the SELECT side for now.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Explains a standard SELECT-only RLS policy (e.g. `using (id = auth.uid())`)",
+        "Does not pull in SECURITY DEFINER doors, EXECUTE grants, or append-only triggers — this is a genuine near-miss (RLS and auth.uid() are part of this skill's vocabulary) but the question is scoped to a read policy with no write path, grant design, or SECURITY DEFINER function in scope"
+      ]
+    }
+  ]
+}

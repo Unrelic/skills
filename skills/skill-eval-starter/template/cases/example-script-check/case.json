@@ -1,0 +1,6 @@
+{
+  "category": "example",
+  "description": "script: wraps a deterministic diff scorer (checks/exact-match.sh) — the escape hatch for anything grep can't express. Held out in split.json so it stays untouched while you iterate prose against the train set.",
+  "run": {"type": "script", "script": "checks/exact-match.sh"},
+  "expect": {"verdict": "OK", "exit": "0"}
+}

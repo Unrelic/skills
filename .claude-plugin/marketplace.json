@@ -8,7 +8,7 @@
       "name": "unrelic-skills",
       "source": "./",
       "description": "Agent Skills from Unrelic — patterns for designing automation where the AI conducts and a human gates the irreversible steps.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "Unrelic"
       },
@@ -19,10 +19,19 @@
         "human-in-the-loop",
         "automation-safety",
         "agent-skills",
-        "reversibility"
+        "reversibility",
+        "webhooks",
+        "postgres",
+        "row-level-security",
+        "audit-trail",
+        "evals"
       ],
       "skills": [
-        "./skills/approval-gate-design"
+        "./skills/approval-gate-design",
+        "./skills/webhook-fast-ack",
+        "./skills/sql-door-functions",
+        "./skills/agent-audit-trail",
+        "./skills/skill-eval-starter"
       ]
     }
   ]

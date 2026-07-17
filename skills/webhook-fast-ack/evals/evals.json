@@ -1,0 +1,67 @@
+{
+  "skill_name": "webhook-fast-ack",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Here's my Node/Express webhook handler for payment events — review whether it acks fast enough and fix it if not:\n\n```js\napp.post('/webhooks/payments', async (req, res) => {\n  const event = verifySignature(req);\n  await db.recordPurchase(event.data);\n  await emailReceipt(event.data.customerEmail);\n  await syncToWarehouse(event.data);\n  res.sendStatus(200);\n});\n```",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Identifies that res.sendStatus(200) is only reached after three sequential I/O calls (db write, email send, warehouse sync), so total handler latency — not just one slow call — is what risks breaching the provider's response deadline",
+        "Rewrites the handler so it durably persists the raw event (keyed on the event's unique id, idempotent on that key) and responds before recordPurchase/emailReceipt/syncToWarehouse run",
+        "Moves emailReceipt and syncToWarehouse out of the request path entirely into a separate worker/process, not merely reorders them before res.sendStatus",
+        "Flags that the handler has no idempotency guard against the same event id arriving twice, as a separate issue from the timing fix"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I already fixed my webhook handler to respond fast — it sends 202 immediately, then processes in a setTimeout. Is this safe?\n\n```js\napp.post('/webhooks/orders', (req, res) => {\n  res.status(202).send();\n  setTimeout(() => processOrder(req.body), 0);\n});\n```",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Identifies that nothing durable is written before the 202 response — if the process crashes or restarts between res.status(202).send() and processOrder running, the event is lost even though the provider was told it succeeded",
+        "Recommends persisting the raw event to a durable store, idempotent on the provider's event/delivery id, before or atomically with the response — not merely responding quickly",
+        "Recommends the real processing happen in a separate worker that reads the durable store, not an in-process setTimeout that dies with the process",
+        "Does not approve the handler as-is just because it responds fast — distinguishes 'fast ack' from 'durable ack' as two different requirements"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our GitHub webhook endpoint occasionally stops showing up in the delivery log as successful, and when that happens the corresponding automation just never runs — no error anywhere on our side, no crash, nothing in our logs either.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Diagnoses handler latency exceeding the provider's response deadline as the likely cause, even though the user never used the words 'timeout', 'ack', or 'deadline'",
+        "Notes that GitHub does not automatically retry failed deliveries, so a missed deadline means true event loss unless recovered manually",
+        "Recommends splitting the handler into a fast durable-append-and-respond step plus a separate async processing step so future misses can't silently vanish",
+        "Recommends using the provider's delivery log / redelivery mechanism to recover the already-lost events, not just fixing the pattern going forward"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "We handle Slack event callbacks directly in the request handler. Under normal load it's fine, but during busy periods we sometimes see the same event trigger our downstream action twice.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Connects the duplicate action to Slack's documented retry-on-missed-deadline behavior rather than treating it as a random bug",
+        "Recommends acking fast (durable append + immediate response) so handler latency under load stops triggering the retry in the first place",
+        "Separately and explicitly recommends an idempotency guard keyed on the event's unique id, because even a fast handler must tolerate a legitimate duplicate delivery, not just avoid causing one",
+        "Does not treat 'ack faster' alone as a sufficient fix — surfaces both the timing fix and the idempotency fix"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I'm calling a flaky third-party REST API from my backend and want to add exponential backoff and retry so transient 500s don't fail the whole job.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Gives ordinary outbound HTTP retry/backoff guidance (capped exponential backoff, jitter, respecting a Retry-After header)",
+        "Does not introduce webhook receiver design, provider response deadlines, or durable-append idempotency — this is a caller making outbound requests, not a receiver acknowledging inbound webhook deliveries"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Add a settings field where users can paste a URL, and we'll POST a JSON payload to it whenever their account has an event — basically outbound webhooks for our own product.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Implements the outbound-webhook-sender feature (URL field, POST on event, optionally signing the outgoing payload) without introducing the inbound-receiver ack-fast pattern",
+        "Does not discuss response deadlines, durable append-before-ack, or idempotent inbound handlers — this request is about being the sender of webhook deliveries, not the receiver"
+      ]
+    }
+  ]
+}
