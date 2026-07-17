@@ -1,0 +1,4 @@
+This is example fixture content for the skill-eval-starter template.
+It stands in for whatever your real skill produces or consumes: a rendered
+message, a generated config, a classifier's input file. The case only cares
+that a specific forbidden marker is absent from it.

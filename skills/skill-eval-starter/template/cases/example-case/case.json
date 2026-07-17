@@ -1,0 +1,6 @@
+{
+  "category": "example",
+  "description": "grep-absent: fixture.txt must not contain a forbidden marker. This is the fixture-as-input-plus-expected-property pattern — the expectation is a property of the file (marker absent), never an expected string to fuzzy-match.",
+  "run": {"type": "grep-absent", "file": "fixture.txt", "pattern": "FORBIDDEN_MARKER"},
+  "expect": {"verdict": "OK", "exit": "0"}
+}

@@ -1,0 +1,63 @@
+{
+  "skill_name": "skill-eval-starter",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the skill-eval-starter skill to help me add an eval battery to a Claude skill I just finished writing, before I publish it.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Recommends cases as fixtures with an expected property, not an expected string to fuzzy-match",
+        "Recommends deterministic scorers (grep, diff, exit code) and explicitly refuses model-graded scoring for the floor",
+        "Points to copying the starter template (run.sh plus the cases/ and checks/ directories) rather than hand-rolling a runner from scratch"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I want to prove my skill's prompt rewrite actually improved something, using the skill-eval-starter template. How do I set up a baseline and a train/holdout split?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Explains baseline.json as the committed floor to beat, with regressions surfaced as a diff against it",
+        "Explains the train/holdout split and why writing prose against every case overfits the skill to its own test",
+        "Mentions run.sh exiting nonzero on regression and suggests publishing a before/after eval table as the benchmark artifact"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I keep 'improving' my Claude skill's SKILL.md file and I genuinely have no idea if I'm making it better or worse over time. How do I actually find out?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Recognizes this as needing a hermetic eval battery even though the user never used the words 'eval' or 'test' or named the skill",
+        "Introduces cases-as-fixtures, a deterministic scorer, and a committed baseline file as the concrete fix",
+        "Warns against using a model to grade whether the skill's output is correct as the regression floor"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "A teammate wants to submit a new skill to our shared skills repo, but there's currently no way to tell whether it actually works before we merge it. What should I require before approving the PR?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Recommends requiring an evals directory with deterministic cases and a committed baseline before merge",
+        "Flags verifier theater — a green battery whose cases are too soft to catch a plausible wrong answer — as the specific risk of skipping this",
+        "Distinguishes triggering evals (judgment-based, should_trigger/expected_behaviors) from the deterministic regression floor (must not be model-graded)"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Write unit tests for this Python function that parses CSV rows and validates the header order.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Writes ordinary unit tests for the function directly",
+        "Does not introduce Claude Skill concepts like SKILL.md, triggering evals, or a skill's baseline.json — this is a near-miss because 'tests' sounds adjacent to 'evals', but there is no Claude Skill involved at all"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Can you grade how good this student's essay is against the attached rubric and give it a score out of 10?",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Grades the essay against the rubric directly",
+        "Does not mention eval batteries, deterministic scorers, or skill regression testing — 'grade' and 'score' sound adjacent to eval scoring, but nothing here is about testing a Claude Skill"
+      ]
+    }
+  ]
+}

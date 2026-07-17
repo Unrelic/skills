@@ -1,0 +1,63 @@
+{
+  "skill_name": "agent-audit-trail",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the agent-audit-trail skill to help me design a journal for every subagent my orchestrator spawns.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Proposes one append-only JSON Lines record per spawn with closed-vocabulary fields (class, model, effort, label, outcome)",
+        "States that invalid field values must fail closed (nonzero exit, no write) rather than write a partial or best-effort record",
+        "Explains that a correction or escalation is a second record, never an edit to the first"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I want an audit trail that proves an agent didn't just fast-return a fake pass with no real work behind it. Walk me through the tripwire design.",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Describes a deterministic tripwire on caller-supplied tool-use count and duration, not on the wording of the agent's own summary",
+        "Explains that a zero-tool-use, fast, claimed 'pass' outcome gets forced to fail (with a tripwire field recorded), and the record is still written rather than dropped",
+        "States that prompt wording is never the control here — this is a check on caller-supplied counts, not a judgment call about the text"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "My multi-agent pipeline has agents that self-report 'done, all good' but I have no way to check that later, and I can't tell which task classes actually need escalation to a stronger model. What should I build?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Recognizes this as an implicit request for an audit-trail/journal design even though the user never says 'audit trail'",
+        "Recommends binding a one-line prediction (plus what failure would look like) at dispatch time so the later outcome can be graded against something, rather than judged in hindsight",
+        "Recommends per-class escalation rate as the fitness number that should drive routing changes, not a one-off impression"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I run an agent overnight and it always tells me it finished successfully, but I've caught it a couple of times just returning canned text without doing anything. How do I catch that mechanically instead of reading the output every time?",
+      "should_trigger": true,
+      "expected_behaviors": [
+        "Identifies the zero-tool-use / fast-return pattern as the mechanical signal to check, not the text of the output",
+        "Recommends a structural, deterministic check (caller-supplied tool-use count and duration) over trusting the agent's own claim of success",
+        "Frames this as preventing self-graded theater, not just 'read the logs more carefully'"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Can you help me write a cron job that deletes log files older than 30 days to save disk space?",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Gives a direct answer about log rotation and cleanup",
+        "Does not introduce journaling, prediction contracts, or tripwires — this is ordinary log hygiene, not a question about auditing agent runs"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Review this pull request for bugs in the JSON parsing logic. Nothing here involves agents or logging.",
+      "should_trigger": false,
+      "expected_behaviors": [
+        "Performs an ordinary code review of the parsing logic",
+        "Does not mention audit trails, spawn journals, or prediction grading even though the code happens to touch JSON — the task has no agent-delegation or verification-of-agent-output question in it"
+      ]
+    }
+  ]
+}
